@@ -1019,7 +1019,7 @@ function calculateAllImpairments() {
             totalImpairment,
             hdImpairment
     });
-
+});
     // Calculate thumb impairment
     const ipFlexion = document.getElementById('ip-flexion').value;
     const ipExtension = document.getElementById('ip-extension').value;
