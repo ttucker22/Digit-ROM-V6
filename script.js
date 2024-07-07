@@ -857,11 +857,17 @@ function combinefingerImpairments(impairments) {
             combined = combined + (imp / 100) * (1 - combined);
             combinedSteps.push(imp);
         });
+        
+        // Fix precision and round correctly
+        let precisionFixedResult = Number((combined * 100).toFixed(2));
+        let roundedResult = Math.round(precisionFixedResult);
+        
+        console.log('combinefingerImpairments intermediate result:', precisionFixedResult);
+        
         let result = { 
-            combined: Math.round(combined * 100 + Number.EPSILON), 
+            combined: roundedResult, 
             combinedSteps 
         };
-        console.log('combinefingerImpairments intermediate result:', combined * 100);
         console.log('combinefingerImpairments final result:', result);
         return result;
     } catch (error) {
@@ -869,13 +875,6 @@ function combinefingerImpairments(impairments) {
         return { combined: 0, combinedSteps: [] };
     }
 }
-
-    console.log(`${fingerType} Finger Impairment Details:`, {
-    jointImpairments,
-    totalImpairment,
-    combinedSteps,
-    hdImpairment
-});
 
     function addImpairments(impairments) {
         console.log('addImpairments called with:', impairments);
@@ -1062,6 +1061,13 @@ function combinefingerImpairments(impairments) {
 
                 const hdImpairment = convertToHD(totalImpairment, fingerType);
                 totalHDImpairment += hdImpairment;
+
+                console.log(`${fingerType} Finger Impairment Details:`, {
+                    jointImpairments,
+                    totalImpairment,
+                    combinedSteps,
+                    hdImpairment
+                });
 
                 let CVC;
                 if (totalImpairment === 0) {
