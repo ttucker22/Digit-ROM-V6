@@ -836,7 +836,7 @@ function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
     impairments.forEach(imp => {
-        combined = Math.round((combined + (imp / 100) * (1 - combined)) * 100) / 100;
+        combined = (combined + (imp / 100) * (1 - combined));
         combinedSteps.push(imp);
     });
     return { combined: Math.round(combined * 100), combinedSteps };
@@ -983,25 +983,25 @@ function calculateAllImpairments() {
         form.querySelector('.MPTotalImpairment').textContent = mpTotalImp;
 
         // Calculate total finger impairment
-        const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
-        jointImpairments.sort((a, b) => b - a);
+    const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
+    jointImpairments.sort((a, b) => b - a);
 
-        const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
+    const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
 
-        const hdImpairment = convertToHD(totalImpairment, fingerType);
-        totalHDImpairment += hdImpairment;
+    const hdImpairment = convertToHD(totalImpairment, fingerType);
+    totalHDImpairment += hdImpairment;
 
-        let CVC;
-        if (totalImpairment === 0) {
-            CVC = `CVC: 0 DT = 0 HD`;
-        } else if (jointImpairments.length === 1) {
-            CVC = `CVC: ${totalImpairment} DT = ${hdImpairment} HD`;
-        } else {
-            const combinedStepsText = combinedSteps.join(' C ');
-            CVC = `CVC: ${combinedStepsText} = ${totalImpairment} DT = ${hdImpairment} HD`;
-        }
+    let CVC;
+    if (totalImpairment === 0) {
+        CVC = `CVC: 0 DT = 0 HD`;
+    } else if (jointImpairments.length === 1) {
+        CVC = `CVC: ${totalImpairment} DT = ${hdImpairment} HD`;
+    } else {
+        const combinedStepsText = combinedSteps.join(' C ');
+        CVC = `CVC: ${combinedStepsText} = ${totalImpairment} DT = ${hdImpairment} HD`;
+    }
 
-        form.querySelector('.cvc-result').textContent = CVC;
+    form.querySelector('.cvc-result').textContent = CVC;
     });
 
     // Calculate thumb impairment
