@@ -797,6 +797,11 @@ const OPPOSITIONData = [
     { cm: 0, dtAbnormalMotion: 45, dtAnkylosis: 45 }
   ];
 
+// Utility function for rounding
+function roundHalfUp(num) {
+    return Math.round(num * 100) / 100;
+}
+
 // Finger impairment calculation functions
 function lookupfingerDTImpairment(angle, jointType, motionType) {
     let data;
@@ -836,7 +841,7 @@ function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
     impairments.forEach(imp => {
-        combined = Math.round((combined + (imp / 100) * (1 - combined)) * 100) / 100;
+        combined = combined + (imp / 100) * (1 - combined);
         combinedSteps.push(imp);
     });
     return { combined: Math.round(combined * 100), combinedSteps };
@@ -921,9 +926,6 @@ function clearAllInputs() {
     calculateAllImpairments();
 }
 
-// Add event listener to the Clear All button
-document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
-
 // Main calculation function
 function calculateAllImpairments() {
     let totalHDImpairment = 0;
@@ -1002,6 +1004,13 @@ function calculateAllImpairments() {
         }
 
         form.querySelector('.cvc-result').textContent = CVC;
+        
+        console.log(`${fingerType} Finger:`, {
+            jointImpairments,
+            totalImpairment,
+            hdImpairment,
+            CVC
+        });
     });
 
     // Calculate thumb impairment
@@ -1038,7 +1047,6 @@ function calculateAllImpairments() {
 
     let radialAbductionImp = calculateThumbImpairment(radialAbduction, RADIALABDUCTIONData, 'radialAbduction');
     let radialAbductionAnkylosisImp = calculateThumbImpairment(radialAbductionAnkylosis, RADIALABDUCTIONData, 'ankylosis');
-
     document.getElementById('radial-abduction-motion-imp').textContent = radialAbductionImp;
     document.getElementById('radial-abduction-ankylosis-imp').textContent = radialAbductionAnkylosisImp;
     let radialAbductionTotalImp = Math.max(radialAbductionImp, radialAbductionAnkylosisImp);
@@ -1097,17 +1105,25 @@ function calculateAllImpairments() {
     document.getElementById('total-hd-impairment').textContent = totalHDImpairment;
     document.getElementById('total-ue-impairment').textContent = totalUEImpairment;
     document.getElementById('total-wpi').textContent = totalWPI;
+
+    console.log('Total Impairments:', {
+        totalHDImpairment,
+        totalUEImpairment,
+        totalWPI
+    });
 }
 
-// Event listener for Clear All button
+// Add event listener to the Clear All button
 document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
 
 // Maintain Auto-Calculation (place this at the end of your script)
 // Add event listeners to all input fields for real-time updates
-const inputFields = document.querySelectorAll('input[type="number"]');
-inputFields.forEach(input => {
-    input.addEventListener('input', calculateAllImpairments);
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const inputFields = document.querySelectorAll('input[type="number"]');
+    inputFields.forEach(input => {
+        input.addEventListener('input', calculateAllImpairments);
+    });
 
-// Initial calculation
-calculateAllImpairments();
+    // Initial calculation
+    calculateAllImpairments();
+});
