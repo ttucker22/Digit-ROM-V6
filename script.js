@@ -799,7 +799,7 @@ const OPPOSITIONData = [
 
 // Utility function for rounding
 function roundHalfUp(num) {
-    return Math.round(num * 10) / 10;
+    return Math.round(num * 100) / 100;
 }
 
 // Finger impairment calculation functions
@@ -840,11 +840,17 @@ function lookupfingerDTImpairment(angle, jointType, motionType) {
 function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
-    impairments.forEach(imp => {
+    let debugSteps = [];
+    impairments.forEach((imp, index) => {
+        let prevCombined = combined;
         combined = combined + (imp / 100) * (1 - combined);
         combinedSteps.push(imp);
+        debugSteps.push(`Step ${index + 1}: ${prevCombined.toFixed(4)} + (${imp}/100) * (1 - ${prevCombined.toFixed(4)}) = ${combined.toFixed(4)}`);
     });
-    return { combined: Math.round(combined * 100), combinedSteps };
+    console.log("Combination steps:", debugSteps);
+    let finalResult = Math.round(combined * 100);
+    console.log(`Final result: ${combined.toFixed(4)} * 100 = ${(combined * 100).toFixed(2)}, rounded to ${finalResult}`);
+    return { combined: finalResult, combinedSteps };
 }
 
 function addImpairments(impairments) {
@@ -988,6 +994,8 @@ function calculateAllImpairments() {
         const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
         jointImpairments.sort((a, b) => b - a);
 
+        console.log(`${fingerType} Finger Joint Impairments:`, jointImpairments);
+
         const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
 
         const hdImpairment = convertToHD(totalImpairment, fingerType);
@@ -1005,11 +1013,11 @@ function calculateAllImpairments() {
 
         form.querySelector('.cvc-result').textContent = CVC;
 
+        console.log(`${fingerType} Finger Final CVC:`, CVC);
         console.log(`${fingerType} Finger:`, {
             jointImpairments,
             totalImpairment,
             hdImpairment
-        });
     });
 
     // Calculate thumb impairment
