@@ -870,6 +870,13 @@ function combinefingerImpairments(impairments) {
     }
 }
 
+    console.log(`${fingerType} Finger Impairment Details:`, {
+    jointImpairments,
+    totalImpairment,
+    combinedSteps,
+    hdImpairment
+});
+
     function addImpairments(impairments) {
         console.log('addImpairments called with:', impairments);
         try {
