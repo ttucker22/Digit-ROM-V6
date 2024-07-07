@@ -841,10 +841,10 @@ function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
     impairments.forEach(imp => {
-        combined = roundHalfUp((combined + (imp / 100) * (1 - combined)) * 100);
+        combined = combined + (imp / 100) * (1 - combined);
         combinedSteps.push(imp);
     });
-    return { combined: Math.round(combined), combinedSteps };
+    return { combined: Math.round(combined * 100), combinedSteps };
 }
 
 function addImpairments(impairments) {
@@ -1004,6 +1004,12 @@ function calculateAllImpairments() {
         }
 
         form.querySelector('.cvc-result').textContent = CVC;
+
+        console.log(`${fingerType} Finger:`, {
+            jointImpairments,
+            totalImpairment,
+            hdImpairment
+        });
     });
 
     // Calculate thumb impairment
