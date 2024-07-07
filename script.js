@@ -848,23 +848,27 @@ const OPPOSITIONData = [
         }
     }
 
-    function combinefingerImpairments(impairments) {
-        console.log('combinefingerImpairments called with:', impairments);
-        try {
-            let combined = 0;
-            let combinedSteps = [];
-            impairments.forEach(imp => {
-                combined = combined + (imp / 100) * (1 - combined);
-                combinedSteps.push(imp);
-            });
-            let result = { combined: Math.round(combined * 100), combinedSteps };
-            console.log('combinefingerImpairments result:', result);
-            return result;
-        } catch (error) {
-            console.error('Error in combinefingerImpairments:', error);
-            return { combined: 0, combinedSteps: [] };
-        }
+function combinefingerImpairments(impairments) {
+    console.log('combinefingerImpairments called with:', impairments);
+    try {
+        let combined = 0;
+        let combinedSteps = [];
+        impairments.forEach(imp => {
+            combined = combined + (imp / 100) * (1 - combined);
+            combinedSteps.push(imp);
+        });
+        let result = { 
+            combined: Math.round(combined * 100 + Number.EPSILON), 
+            combinedSteps 
+        };
+        console.log('combinefingerImpairments intermediate result:', combined * 100);
+        console.log('combinefingerImpairments final result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error in combinefingerImpairments:', error);
+        return { combined: 0, combinedSteps: [] };
     }
+}
 
     function addImpairments(impairments) {
         console.log('addImpairments called with:', impairments);
