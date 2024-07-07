@@ -832,14 +832,17 @@ function lookupfingerDTImpairment(angle, jointType, motionType) {
     return dtImpairment;
 }
 
+function roundHalfUp(num) {
+    return Math.round(num * 10) / 10;
+    
 function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
     impairments.forEach(imp => {
-        combined = Math.round((combined + (imp / 100) * (1 - combined)) * 100) / 100;
+        combined = roundHalfUp((combined + (imp / 100) * (1 - combined)) * 100);
         combinedSteps.push(imp);
     });
-    return { combined: Math.round(combined * 100), combinedSteps };
+    return { combined: Math.round(combined), combinedSteps };
 }
 
 function addImpairments(impairments) {
@@ -1099,15 +1102,20 @@ function calculateAllImpairments() {
     document.getElementById('total-wpi').textContent = totalWPI;
 }
 
-// Event listener for Clear All button
-document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
+// Event listeners and initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all input fields
+    const inputFields = document.querySelectorAll('input[type="number"]');
+    inputFields.forEach(input => {
+        input.addEventListener('input', calculateAllImpairments);
+    });
 
-// Maintain Auto-Calculation (place this at the end of your script)
-// Add event listeners to all input fields for real-time updates
-const inputFields = document.querySelectorAll('input[type="number"]');
-inputFields.forEach(input => {
-    input.addEventListener('input', calculateAllImpairments);
+    // Event listener for Clear All button
+    const clearAllButton = document.getElementById('clearAllButton');
+    if (clearAllButton) {
+        clearAllButton.addEventListener('click', clearAllInputs);
+    }
+
+    // Initial calculation
+    calculateAllImpairments();
 });
-
-// Initial calculation
-calculateAllImpairments();
