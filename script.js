@@ -835,12 +835,15 @@ function lookupfingerDTImpairment(angle, jointType, motionType) {
 function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
-    impairments.forEach(imp => {
+    let debugSteps = [];
+    impairments.forEach((imp, index) => {
+        let prevCombined = combined;
         combined = combined + (imp / 100) * (1 - combined);
         combinedSteps.push(imp);
+        debugSteps.push(`Step ${index + 1}: ${prevCombined.toFixed(4)} + (${imp}/100) * (1 - ${prevCombined.toFixed(4)}) = ${combined.toFixed(4)}`);
     });
-    // Keep full precision until final rounding
-    return { combined: combined * 100, combinedSteps };
+    console.log("Combination steps:", debugSteps);
+    return { combined: combined * 100, combinedSteps, debugSteps };
 }
 
 function addImpairments(impairments) {
@@ -849,7 +852,12 @@ function addImpairments(impairments) {
 
 function convertToHD(dt, fingerType) {
     const conversionFactor = fingerType === 'index' || fingerType === 'middle' ? 0.2 : 0.1;
-    return Math.round(dt * conversionFactor);
+    const result = Math.round(dt * conversionFactor);
+    console.log(`Converting ${dt} DT to HD for ${fingerType} finger:`, {
+        calculation: `${dt} * ${conversionFactor} = ${dt * conversionFactor}`,
+        roundedResult: result
+    });
+    return result;
 }
 
 // Thumb impairment calculation functions
@@ -986,10 +994,19 @@ function calculateAllImpairments() {
         const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
         jointImpairments.sort((a, b) => b - a);
 
-        const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
+        console.log(`${fingerType} Finger Joint Impairments:`, jointImpairments);
+
+        const { combined: totalImpairment, combinedSteps, debugSteps } = combinefingerImpairments(jointImpairments);
+
+        console.log(`${fingerType} Finger Combination Steps:`, debugSteps);
 
         // Round only at the end for display
         const roundedTotalImpairment = Math.round(totalImpairment);
+        console.log(`${fingerType} Finger Total Impairment:`, {
+            unrounded: totalImpairment.toFixed(2),
+            rounded: roundedTotalImpairment
+        });
+
         const hdImpairment = convertToHD(roundedTotalImpairment, fingerType);
         totalHDImpairment += hdImpairment;
 
@@ -1004,6 +1021,9 @@ function calculateAllImpairments() {
         }
 
         form.querySelector('.cvc-result').textContent = CVC;
+
+        console.log(`${fingerType} Finger Final CVC:`, CVC);
+    });
 
         // Debugging output
         console.log(`${fingerType} Finger:`, {
