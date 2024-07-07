@@ -797,333 +797,405 @@ const OPPOSITIONData = [
     { cm: 0, dtAbnormalMotion: 45, dtAnkylosis: 45 }
   ];
 
-// Utility function for rounding
-function roundHalfUp(num) {
-    return Math.round(num * 100) / 100;
-}
+// Wrap the entire script in an immediately invoked function expression (IIFE)
+(function() {
+    console.log('Script started');
 
-// Finger impairment calculation functions
-function lookupfingerDTImpairment(angle, jointType, motionType) {
-    let data;
-    if (jointType === 'DIP') {
-        data = DIPData;
-    } else if (jointType === 'PIP') {
-        data = PIPData;
-    } else if (jointType === 'MP') {
-        data = FINGERMPData;
-    } else {
-        throw new Error('Invalid joint type');
+    // Utility function for rounding
+    function roundHalfUp(num) {
+        return Math.round(num * 100) / 100;
     }
 
-    let dtImpairment = null;
-    for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        if (motionType === 'flexion' && (angle <= row.flexion || row.flexion === '<-30' && angle < -30)) {
-            dtImpairment = row.dtFlexion;
-            break;
-        } else if (motionType === 'extension' && (angle <= row.extension || row.extension === '<-70' && angle < -70)) {
-            dtImpairment = row.dtExtension;
-            break;
-        } else if (motionType === 'ankylosis' && (angle <= row.ankylosis || row.ankylosis === '<-30' && angle < -30)) {
-            dtImpairment = row.dtAnkylosis;
-            break;
+    // Finger impairment calculation functions
+    function lookupfingerDTImpairment(angle, jointType, motionType) {
+        console.log(`lookupfingerDTImpairment called with: angle=${angle}, jointType=${jointType}, motionType=${motionType}`);
+        try {
+            let data;
+            if (jointType === 'DIP') {
+                data = DIPData;
+            } else if (jointType === 'PIP') {
+                data = PIPData;
+            } else if (jointType === 'MP') {
+                data = FINGERMPData;
+            } else {
+                throw new Error('Invalid joint type');
+            }
+
+            let dtImpairment = null;
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                if (motionType === 'flexion' && (angle <= row.flexion || row.flexion === '<-30' && angle < -30)) {
+                    dtImpairment = row.dtFlexion;
+                    break;
+                } else if (motionType === 'extension' && (angle <= row.extension || row.extension === '<-70' && angle < -70)) {
+                    dtImpairment = row.dtExtension;
+                    break;
+                } else if (motionType === 'ankylosis' && (angle <= row.ankylosis || row.ankylosis === '<-30' && angle < -30)) {
+                    dtImpairment = row.dtAnkylosis;
+                    break;
+                }
+            }
+
+            if (dtImpairment === null) {
+                throw new Error('Angle out of range');
+            }
+
+            console.log(`lookupfingerDTImpairment result: ${dtImpairment}`);
+            return dtImpairment;
+        } catch (error) {
+            console.error('Error in lookupfingerDTImpairment:', error);
+            return 0;
         }
     }
 
-    if (dtImpairment === null) {
-        throw new Error('Angle out of range');
-    }
-
-    return dtImpairment;
-}
-
-function combinefingerImpairments(impairments) {
-    let combined = 0;
-    let combinedSteps = [];
-    impairments.forEach(imp => {
-        combined = combined + (imp / 100) * (1 - combined);
-        combinedSteps.push(imp);
-    });
-    return { combined: Math.round(combined * 100), combinedSteps };
-}
-
-function addImpairments(impairments) {
-    return impairments.reduce((acc, imp) => acc + imp, 0);
-}
-
-function convertToHD(dt, fingerType) {
-    const conversionFactor = fingerType === 'index' || fingerType === 'middle' ? 0.2 : 0.1;
-    return Math.round(dt * conversionFactor);
-}
-
-// Thumb impairment calculation functions
-function calculateThumbImpairment(value, dataArray, type) {
-    if (value === "" || isNaN(value)) {
-        return 0;
-    }
-    value = parseFloat(value);
-    let row;
-    
-    if (type === 'radialAbduction' || type === 'cm') {
-        row = dataArray.find(r => r[type] === value) || 
-              dataArray.find(r => r[type] === `>${Math.abs(value)}`) ||
-              dataArray.find(r => r[type] === `<${Math.abs(value)}`);
-    } else if (type === 'ankylosis' && (dataArray === RADIALABDUCTIONData || dataArray === ADDUCTIONData || dataArray === OPPOSITIONData)) {
-        const lookupType = dataArray === RADIALABDUCTIONData ? 'radialAbduction' : 'cm';
-        row = dataArray.find(r => r[lookupType] === value) || 
-              dataArray.find(r => r[lookupType] === `>${Math.abs(value)}`) ||
-              dataArray.find(r => r[lookupType] === `<${Math.abs(value)}`);
-    } else {
-        row = dataArray.find(r => r[type] === value);
-    }
-    
-    if (row) {
-        if (type === 'radialAbduction' || type === 'cm') {
-            return row.dtAbnormalMotion || 0;
-        } else if (type === 'ankylosis') {
-            return row.dtAnkylosis || 0;
-        } else {
-            return row[`dt${type.charAt(0).toUpperCase() + type.slice(1)}`] || 0;
+    function combinefingerImpairments(impairments) {
+        console.log('combinefingerImpairments called with:', impairments);
+        try {
+            let combined = 0;
+            let combinedSteps = [];
+            impairments.forEach(imp => {
+                combined = combined + (imp / 100) * (1 - combined);
+                combinedSteps.push(imp);
+            });
+            let result = { combined: Math.round(combined * 100), combinedSteps };
+            console.log('combinefingerImpairments result:', result);
+            return result;
+        } catch (error) {
+            console.error('Error in combinefingerImpairments:', error);
+            return { combined: 0, combinedSteps: [] };
         }
     }
-    return 0;
-}
 
-function clearAllInputs() {
-    // Clear all input fields
-    const allInputs = document.querySelectorAll('input[type="number"]');
-    allInputs.forEach(input => {
-        input.value = '';
-    });
-
-    // Reset all impairment displays
-    const allImpairments = document.querySelectorAll('.DIPFlexionImpairment, .DIPExtensionImpairment, .DIPAnkylosisImpairment, .DIPTotalImpairment, .PIPFlexionImpairment, .PIPExtensionImpairment, .PIPAnkylosisImpairment, .PIPTotalImpairment, .MPFlexionImpairment, .MPExtensionImpairment, .MPAnkylosisImpairment, .MPTotalImpairment');
-    allImpairments.forEach(imp => {
-        imp.textContent = '0';
-    });
-
-    // Reset CVC results
-    const cvcResults = document.querySelectorAll('.cvc-result');
-    cvcResults.forEach(cvc => {
-        cvc.textContent = 'CVC: 0 DT = 0 HD';
-    });
-
-    // Reset thumb impairments
-    const thumbImpairments = document.querySelectorAll('#ip-flexion-imp, #ip-extension-imp, #ip-ankylosis-imp, #ip-imp, #mp-flexion-imp, #mp-extension-imp, #mp-ankylosis-imp, #mp-imp, #radial-abduction-motion-imp, #radial-abduction-ankylosis-imp, #radial-abduction-imp, #cmc-adduction-motion-imp, #cmc-adduction-ankylosis-imp, #cmc-adduction-imp, #opposition-motion-imp, #opposition-ankylosis-imp, #opposition-imp');
-    thumbImpairments.forEach(imp => {
-        imp.textContent = '0';
-    });
-
-    // Reset thumb ADD result
-    document.getElementById('total-imp').textContent = 'ADD: 0 DT = 0 HD';
-
-    // Reset total impairment results
-    document.getElementById('total-hd-impairment').textContent = '0';
-    document.getElementById('total-ue-impairment').textContent = '0';
-    document.getElementById('total-wpi').textContent = '0';
-
-    // Recalculate all impairments to update any derived values
-    calculateAllImpairments();
-}
-
-// Main calculation function
-function calculateAllImpairments() {
-    let totalHDImpairment = 0;
-
-    // Calculate finger impairments
-    const fingerTypes = ['index', 'middle', 'ring', 'little'];
-
-    fingerTypes.forEach(fingerType => {
-        const form = document.getElementById(`${fingerType}Finger`);
-        
-        // DIP Joint
-        const dipFlexion = form.querySelector('.DIPFlexion').value;
-        const dipExtension = form.querySelector('.DIPExtension').value;
-        const dipAnkylosis = form.querySelector('.DIPAnkylosis').value;
-
-        const dipFlexionImp = dipFlexion ? lookupfingerDTImpairment(parseFloat(dipFlexion), 'DIP', 'flexion') : 0;
-        const dipExtensionImp = dipExtension ? lookupfingerDTImpairment(parseFloat(dipExtension), 'DIP', 'extension') : 0;
-        const dipAnkylosisImp = dipAnkylosis ? lookupfingerDTImpairment(parseFloat(dipAnkylosis), 'DIP', 'ankylosis') : 0;
-
-        form.querySelector('.DIPFlexionImpairment').textContent = dipFlexionImp;
-        form.querySelector('.DIPExtensionImpairment').textContent = dipExtensionImp;
-        form.querySelector('.DIPAnkylosisImpairment').textContent = dipAnkylosisImp;
-
-        const dipTotalImp = Math.max(dipFlexionImp + dipExtensionImp, dipAnkylosisImp);
-        form.querySelector('.DIPTotalImpairment').textContent = dipTotalImp;
-
-        // PIP Joint
-        const pipFlexion = form.querySelector('.PIPFlexion').value;
-        const pipExtension = form.querySelector('.PIPExtension').value;
-        const pipAnkylosis = form.querySelector('.PIPAnkylosis').value;
-
-        const pipFlexionImp = pipFlexion ? lookupfingerDTImpairment(parseFloat(pipFlexion), 'PIP', 'flexion') : 0;
-        const pipExtensionImp = pipExtension ? lookupfingerDTImpairment(parseFloat(pipExtension), 'PIP', 'extension') : 0;
-        const pipAnkylosisImp = pipAnkylosis ? lookupfingerDTImpairment(parseFloat(pipAnkylosis), 'PIP', 'ankylosis') : 0;
-
-        form.querySelector('.PIPFlexionImpairment').textContent = pipFlexionImp;
-        form.querySelector('.PIPExtensionImpairment').textContent = pipExtensionImp;
-        form.querySelector('.PIPAnkylosisImpairment').textContent = pipAnkylosisImp;
-
-        const pipTotalImp = Math.max(pipFlexionImp + pipExtensionImp, pipAnkylosisImp);
-        form.querySelector('.PIPTotalImpairment').textContent = pipTotalImp;
-
-        // MP Joint
-        const mpFlexion = form.querySelector('.MPFlexion').value;
-        const mpExtension = form.querySelector('.MPExtension').value;
-        const mpAnkylosis = form.querySelector('.MPAnkylosis').value;
-
-        const mpFlexionImp = mpFlexion ? lookupfingerDTImpairment(parseFloat(mpFlexion), 'MP', 'flexion') : 0;
-        const mpExtensionImp = mpExtension ? lookupfingerDTImpairment(parseFloat(mpExtension), 'MP', 'extension') : 0;
-        const mpAnkylosisImp = mpAnkylosis ? lookupfingerDTImpairment(parseFloat(mpAnkylosis), 'MP', 'ankylosis') : 0;
-
-        form.querySelector('.MPFlexionImpairment').textContent = mpFlexionImp;
-        form.querySelector('.MPExtensionImpairment').textContent = mpExtensionImp;
-        form.querySelector('.MPAnkylosisImpairment').textContent = mpAnkylosisImp;
-
-        const mpTotalImp = Math.max(mpFlexionImp + mpExtensionImp, mpAnkylosisImp);
-        form.querySelector('.MPTotalImpairment').textContent = mpTotalImp;
-
-        // Calculate total finger impairment
-        const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
-        jointImpairments.sort((a, b) => b - a);
-
-        const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
-
-        const hdImpairment = convertToHD(totalImpairment, fingerType);
-        totalHDImpairment += hdImpairment;
-
-        let CVC;
-        if (totalImpairment === 0) {
-            CVC = `CVC: 0 DT = 0 HD`;
-        } else if (jointImpairments.length === 1) {
-            CVC = `CVC: ${totalImpairment} DT = ${hdImpairment} HD`;
-        } else {
-            const combinedStepsText = combinedSteps.join(' C ');
-            CVC = `CVC: ${combinedStepsText} = ${totalImpairment} DT = ${hdImpairment} HD`;
+    function addImpairments(impairments) {
+        console.log('addImpairments called with:', impairments);
+        try {
+            let result = impairments.reduce((acc, imp) => acc + imp, 0);
+            console.log('addImpairments result:', result);
+            return result;
+        } catch (error) {
+            console.error('Error in addImpairments:', error);
+            return 0;
         }
-
-        form.querySelector('.cvc-result').textContent = CVC;
-        
-        console.log(`${fingerType} Finger:`, {
-            jointImpairments,
-            totalImpairment,
-            hdImpairment,
-            CVC
-        });
-    });
-
-    // Calculate thumb impairment
-    const ipFlexion = document.getElementById('ip-flexion').value;
-    const ipExtension = document.getElementById('ip-extension').value;
-    const ipAnkylosis = document.getElementById('ip-ankylosis').value;
-    
-    let ipFlexionImp = calculateThumbImpairment(ipFlexion, IPData, 'flexion');
-    let ipExtensionImp = calculateThumbImpairment(ipExtension, IPData, 'extension');
-    let ipAnkylosisImp = calculateThumbImpairment(ipAnkylosis, IPData, 'ankylosis');
-    
-    document.getElementById('ip-flexion-imp').textContent = ipFlexionImp;
-    document.getElementById('ip-extension-imp').textContent = ipExtensionImp;
-    document.getElementById('ip-ankylosis-imp').textContent = ipAnkylosisImp;
-    let ipTotalImp = Math.max(ipFlexionImp + ipExtensionImp, ipAnkylosisImp);
-    document.getElementById('ip-imp').textContent = ipTotalImp;
-
-    const mpFlexion = document.getElementById('mp-flexion').value;
-    const mpExtension = document.getElementById('mp-extension').value;
-    const mpAnkylosis = document.getElementById('mp-ankylosis').value;
-    
-    let mpFlexionImp = calculateThumbImpairment(mpFlexion, THUMBMPData, 'flexion');
-    let mpExtensionImp = calculateThumbImpairment(mpExtension, THUMBMPData, 'extension');
-    let mpAnkylosisImp = calculateThumbImpairment(mpAnkylosis, THUMBMPData, 'ankylosis');
-    
-    document.getElementById('mp-flexion-imp').textContent = mpFlexionImp;
-    document.getElementById('mp-extension-imp').textContent = mpExtensionImp;
-    document.getElementById('mp-ankylosis-imp').textContent = mpAnkylosisImp;
-    let mpTotalImp = Math.max(mpFlexionImp + mpExtensionImp, mpAnkylosisImp);
-    document.getElementById('mp-imp').textContent = mpTotalImp;
-
-    const radialAbduction = document.getElementById('radial-abduction').value;
-    const radialAbductionAnkylosis = document.getElementById('radial-abduction-ankylosis').value;
-
-    let radialAbductionImp = calculateThumbImpairment(radialAbduction, RADIALABDUCTIONData, 'radialAbduction');
-    let radialAbductionAnkylosisImp = calculateThumbImpairment(radialAbductionAnkylosis, RADIALABDUCTIONData, 'ankylosis');
-    document.getElementById('radial-abduction-motion-imp').textContent = radialAbductionImp;
-    document.getElementById('radial-abduction-ankylosis-imp').textContent = radialAbductionAnkylosisImp;
-    let radialAbductionTotalImp = Math.max(radialAbductionImp, radialAbductionAnkylosisImp);
-    document.getElementById('radial-abduction-imp').textContent = radialAbductionTotalImp;
-
-    const cmcAdduction = document.getElementById('cmc-adduction').value;
-    const cmcAdductionAnkylosis = document.getElementById('cmc-adduction-ankylosis').value;
-
-    let cmcAdductionImp = calculateThumbImpairment(cmcAdduction, ADDUCTIONData, 'cm');
-    let cmcAdductionAnkylosisImp = calculateThumbImpairment(cmcAdductionAnkylosis, ADDUCTIONData, 'ankylosis');
-
-    document.getElementById('cmc-adduction-motion-imp').textContent = cmcAdductionImp;
-    document.getElementById('cmc-adduction-ankylosis-imp').textContent = cmcAdductionAnkylosisImp;
-    let cmcAdductionTotalImp = Math.max(cmcAdductionImp, cmcAdductionAnkylosisImp);
-    document.getElementById('cmc-adduction-imp').textContent = cmcAdductionTotalImp;
-
-    const opposition = document.getElementById('opposition').value;
-    const oppositionAnkylosis = document.getElementById('opposition-ankylosis').value;
-
-    let oppositionImp = calculateThumbImpairment(opposition, OPPOSITIONData, 'cm');
-    let oppositionAnkylosisImp = calculateThumbImpairment(oppositionAnkylosis, OPPOSITIONData, 'ankylosis');
-
-    document.getElementById('opposition-motion-imp').textContent = oppositionImp;
-    document.getElementById('opposition-ankylosis-imp').textContent = oppositionAnkylosisImp;
-    let oppositionTotalImp = Math.max(oppositionImp, oppositionAnkylosisImp);
-    document.getElementById('opposition-imp').textContent = oppositionTotalImp;
-
-    const totalThumbDigitImp = ipTotalImp + mpTotalImp + radialAbductionTotalImp + cmcAdductionTotalImp + oppositionTotalImp;
-    const thumbHandImp = Math.round(totalThumbDigitImp * 0.4);
-    totalHDImpairment += thumbHandImp;
-
-    let thumbImpairments = [
-        { value: ipTotalImp, label: 'IP' },
-        { value: mpTotalImp, label: 'MP' },
-        { value: radialAbductionTotalImp, label: 'Radial Abduction' },
-        { value: cmcAdductionTotalImp, label: 'CMC Adduction' },
-        { value: oppositionTotalImp, label: 'Opposition' }
-    ].filter(imp => imp.value > 0);
-
-    thumbImpairments.sort((a, b) => b.value - a.value);
-
-    let additionString = thumbImpairments.map(imp => imp.value).join(' + ');
-
-    if (additionString) {
-        document.getElementById('total-imp').textContent = 
-            `ADD: ${additionString} = ${totalThumbDigitImp} DT = ${thumbHandImp} HD`;
-    } else {
-        document.getElementById('total-imp').textContent = 
-            `ADD: 0 DT = 0 HD`;
     }
-    
-    // Calculate total hand impairment
-    const totalUEImpairment = Math.round(totalHDImpairment * 0.9);
-    const totalWPI = Math.round(totalUEImpairment * 0.6);
 
-    document.getElementById('total-hd-impairment').textContent = totalHDImpairment;
-    document.getElementById('total-ue-impairment').textContent = totalUEImpairment;
-    document.getElementById('total-wpi').textContent = totalWPI;
+    function convertToHD(dt, fingerType) {
+        console.log(`convertToHD called with: dt=${dt}, fingerType=${fingerType}`);
+        try {
+            const conversionFactor = fingerType === 'index' || fingerType === 'middle' ? 0.2 : 0.1;
+            let result = Math.round(dt * conversionFactor);
+            console.log('convertToHD result:', result);
+            return result;
+        } catch (error) {
+            console.error('Error in convertToHD:', error);
+            return 0;
+        }
+    }
 
-    console.log('Total Impairments:', {
-        totalHDImpairment,
-        totalUEImpairment,
-        totalWPI
+    // Thumb impairment calculation functions
+    function calculateThumbImpairment(value, dataArray, type) {
+        console.log(`calculateThumbImpairment called with: value=${value}, type=${type}`);
+        try {
+            if (value === "" || isNaN(value)) {
+                return 0;
+            }
+            value = parseFloat(value);
+            let row;
+            
+            if (type === 'radialAbduction' || type === 'cm') {
+                row = dataArray.find(r => r[type] === value) || 
+                      dataArray.find(r => r[type] === `>${Math.abs(value)}`) ||
+                      dataArray.find(r => r[type] === `<${Math.abs(value)}`);
+            } else if (type === 'ankylosis' && (dataArray === RADIALABDUCTIONData || dataArray === ADDUCTIONData || dataArray === OPPOSITIONData)) {
+                const lookupType = dataArray === RADIALABDUCTIONData ? 'radialAbduction' : 'cm';
+                row = dataArray.find(r => r[lookupType] === value) || 
+                      dataArray.find(r => r[lookupType] === `>${Math.abs(value)}`) ||
+                      dataArray.find(r => r[lookupType] === `<${Math.abs(value)}`);
+            } else {
+                row = dataArray.find(r => r[type] === value);
+            }
+            
+            let result = 0;
+            if (row) {
+                if (type === 'radialAbduction' || type === 'cm') {
+                    result = row.dtAbnormalMotion || 0;
+                } else if (type === 'ankylosis') {
+                    result = row.dtAnkylosis || 0;
+                } else {
+                    result = row[`dt${type.charAt(0).toUpperCase() + type.slice(1)}`] || 0;
+                }
+            }
+            console.log('calculateThumbImpairment result:', result);
+            return result;
+        } catch (error) {
+            console.error('Error in calculateThumbImpairment:', error);
+            return 0;
+        }
+    }
+
+    function clearAllInputs() {
+        console.log('clearAllInputs called');
+        try {
+            // Clear all input fields
+            const allInputs = document.querySelectorAll('input[type="number"]');
+            allInputs.forEach(input => {
+                input.value = '';
+            });
+
+            // Reset all impairment displays
+            const allImpairments = document.querySelectorAll('.DIPFlexionImpairment, .DIPExtensionImpairment, .DIPAnkylosisImpairment, .DIPTotalImpairment, .PIPFlexionImpairment, .PIPExtensionImpairment, .PIPAnkylosisImpairment, .PIPTotalImpairment, .MPFlexionImpairment, .MPExtensionImpairment, .MPAnkylosisImpairment, .MPTotalImpairment');
+            allImpairments.forEach(imp => {
+                imp.textContent = '0';
+            });
+
+            // Reset CVC results
+            const cvcResults = document.querySelectorAll('.cvc-result');
+            cvcResults.forEach(cvc => {
+                cvc.textContent = 'CVC: 0 DT = 0 HD';
+            });
+
+            // Reset thumb impairments
+            const thumbImpairments = document.querySelectorAll('#ip-flexion-imp, #ip-extension-imp, #ip-ankylosis-imp, #ip-imp, #mp-flexion-imp, #mp-extension-imp, #mp-ankylosis-imp, #mp-imp, #radial-abduction-motion-imp, #radial-abduction-ankylosis-imp, #radial-abduction-imp, #cmc-adduction-motion-imp, #cmc-adduction-ankylosis-imp, #cmc-adduction-imp, #opposition-motion-imp, #opposition-ankylosis-imp, #opposition-imp');
+            thumbImpairments.forEach(imp => {
+                imp.textContent = '0';
+            });
+
+            // Reset thumb ADD result
+            document.getElementById('total-imp').textContent = 'ADD: 0 DT = 0 HD';
+
+            // Reset total impairment results
+            document.getElementById('total-hd-impairment').textContent = '0';
+            document.getElementById('total-ue-impairment').textContent = '0';
+            document.getElementById('total-wpi').textContent = '0';
+
+            console.log('All inputs cleared');
+
+            // Recalculate all impairments to update any derived values
+            calculateAllImpairments();
+        } catch (error) {
+            console.error('Error in clearAllInputs:', error);
+        }
+    }
+
+    // Main calculation function
+    function calculateAllImpairments() {
+        console.log('calculateAllImpairments called');
+        try {
+            let totalHDImpairment = 0;
+
+            // Calculate finger impairments
+            const fingerTypes = ['index', 'middle', 'ring', 'little'];
+
+            fingerTypes.forEach(fingerType => {
+                console.log(`Calculating impairment for ${fingerType} finger`);
+                const form = document.getElementById(`${fingerType}Finger`);
+                if (!form) {
+                    console.error(`Form not found for ${fingerType} finger`);
+                    return;
+                }
+                
+                // DIP Joint
+                const dipFlexion = form.querySelector('.DIPFlexion').value;
+                const dipExtension = form.querySelector('.DIPExtension').value;
+                const dipAnkylosis = form.querySelector('.DIPAnkylosis').value;
+
+                const dipFlexionImp = dipFlexion ? lookupfingerDTImpairment(parseFloat(dipFlexion), 'DIP', 'flexion') : 0;
+                const dipExtensionImp = dipExtension ? lookupfingerDTImpairment(parseFloat(dipExtension), 'DIP', 'extension') : 0;
+                const dipAnkylosisImp = dipAnkylosis ? lookupfingerDTImpairment(parseFloat(dipAnkylosis), 'DIP', 'ankylosis') : 0;
+
+                form.querySelector('.DIPFlexionImpairment').textContent = dipFlexionImp;
+                form.querySelector('.DIPExtensionImpairment').textContent = dipExtensionImp;
+                form.querySelector('.DIPAnkylosisImpairment').textContent = dipAnkylosisImp;
+
+                const dipTotalImp = Math.max(dipFlexionImp + dipExtensionImp, dipAnkylosisImp);
+                form.querySelector('.DIPTotalImpairment').textContent = dipTotalImp;
+
+                // PIP Joint
+                const pipFlexion = form.querySelector('.PIPFlexion').value;
+                const pipExtension = form.querySelector('.PIPExtension').value;
+                const pipAnkylosis = form.querySelector('.PIPAnkylosis').value;
+
+                const pipFlexionImp = pipFlexion ? lookupfingerDTImpairment(parseFloat(pipFlexion), 'PIP', 'flexion') : 0;
+                const pipExtensionImp = pipExtension ? lookupfingerDTImpairment(parseFloat(pipExtension), 'PIP', 'extension') : 0;
+                const pipAnkylosisImp = pipAnkylosis ? lookupfingerDTImpairment(parseFloat(pipAnkylosis), 'PIP', 'ankylosis') : 0;
+
+                form.querySelector('.PIPFlexionImpairment').textContent = pipFlexionImp;
+                form.querySelector('.PIPExtensionImpairment').textContent = pipExtensionImp;
+                form.querySelector('.PIPAnkylosisImpairment').textContent = pipAnkylosisImp;
+
+                const pipTotalImp = Math.max(pipFlexionImp + pipExtensionImp, pipAnkylosisImp);
+                form.querySelector('.PIPTotalImpairment').textContent = pipTotalImp;
+
+                // MP Joint
+                const mpFlexion = form.querySelector('.MPFlexion').value;
+                const mpExtension = form.querySelector('.MPExtension').value;
+                const mpAnkylosis = form.querySelector('.MPAnkylosis').value;
+
+                const mpFlexionImp = mpFlexion ? lookupfingerDTImpairment(parseFloat(mpFlexion), 'MP', 'flexion') : 0;
+                const mpExtensionImp = mpExtension ? lookupfingerDTImpairment(parseFloat(mpExtension), 'MP', 'extension') : 0;
+                const mpAnkylosisImp = mpAnkylosis ? lookupfingerDTImpairment(parseFloat(mpAnkylosis), 'MP', 'ankylosis') : 0;
+
+                form.querySelector('.MPFlexionImpairment').textContent = mpFlexionImp;
+                form.querySelector('.MPExtensionImpairment').textContent = mpExtensionImp;
+                form.querySelector('.MPAnkylosisImpairment').textContent = mpAnkylosisImp;
+
+                const mpTotalImp = Math.max(mpFlexionImp + mpExtensionImp, mpAnkylosisImp);
+                form.querySelector('.MPTotalImpairment').textContent = mpTotalImp;
+
+                // Calculate total finger impairment
+                const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
+                jointImpairments.sort((a, b) => b - a);
+
+                console.log(`${fingerType} Finger Joint Impairments:`, jointImpairments);
+
+                const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
+
+                const hdImpairment = convertToHD(totalImpairment, fingerType);
+                totalHDImpairment += hdImpairment;
+
+                let CVC;
+                if (totalImpairment === 0) {
+                    CVC = `CVC: 0 DT = 0 HD`;
+                } else if (jointImpairments.length === 1) {
+                    CVC = `CVC: ${totalImpairment} DT = ${hdImpairment} HD`;
+                } else {
+                    const combinedStepsText = combinedSteps.join(' C ');
+                    CVC = `CVC: ${combinedStepsText} = ${totalImpairment} DT = ${hdImpairment} HD`;
+                }
+
+                form.querySelector('.cvc-result').textContent = CVC;
+
+                console.log(`${fingerType} Finger CVC:`, CVC);
+            });
+
+            // Calculate thumb impairment
+            console.log('Calculating thumb impairment');
+            const ipFlexion = document.getElementById('ip-flexion').value;
+            const ipExtension = document.getElementById('ip-extension').value;
+            const ipAnkylosis = document.getElementById('ip-ankylosis').value;
+            
+            let ipFlexionImp = calculateThumbImpairment(ipFlexion, IPData, 'flexion');
+            let ipExtensionImp = calculateThumbImpairment(ipExtension, IPData, 'extension');
+            let ipAnkylosisImp = calculateThumbImpairment(ipAnkylosis, IPData, 'ankylosis');
+            
+            document.getElementById('ip-flexion-imp').textContent = ipFlexionImp;
+            document.getElementById('ip-extension-imp').textContent = ipExtensionImp;
+            document.getElementById('ip-ankylosis-imp').textContent = ipAnkylosisImp;
+            let ipTotalImp = Math.max(ipFlexionImp + ipExtensionImp, ipAnkylosisImp);
+            document.getElementById('ip-imp').textContent = ipTotalImp;
+
+            const mpFlexion = document.getElementById('mp-flexion').value;
+            const mpExtension = document.getElementById('mp-extension').value;
+            const mpAnkylosis = document.getElementById('mp-ankylosis').value;
+            
+            let mpFlexionImp = calculateThumbImpairment(mpFlexion, THUMBMPData, 'flexion');
+            let mpExtensionImp = calculateThumbImpairment(mpExtension, THUMBMPData, 'extension');
+            let mpAnkylosisImp = calculateThumbImpairment(mpAnkylosis, THUMBMPData, 'ankylosis');
+            
+            document.getElementById('mp-flexion-imp').textContent = mpFlexionImp;
+            document.getElementById('mp-extension-imp').textContent = mpExtensionImp;
+            document.getElementById('mp-ankylosis-imp').textContent = mpAnkylosisImp;
+            let mpTotalImp = Math.max(mpFlexionImp + mpExtensionImp, mpAnkylosisImp);
+            document.getElementById('mp-imp').textContent = mpTotalImp;
+
+            const radialAbduction = document.getElementById('radial-abduction').value;
+            const radialAbductionAnkylosis = document.getElementById('radial-abduction-ankylosis').value;
+
+            let radialAbductionImp = calculateThumbImpairment(radialAbduction, RADIALABDUCTIONData, 'radialAbduction');
+            let radialAbductionAnkylosisImp = calculateThumbImpairment(radialAbductionAnkylosis, RADIALABDUCTIONData, 'ankylosis');
+
+            document.getElementById('radial-abduction-motion-imp').textContent = radialAbductionImp;
+            document.getElementById('radial-abduction-ankylosis-imp').textContent = radialAbductionAnkylosisImp;
+            let radialAbductionTotalImp = Math.max(radialAbductionImp, radialAbductionAnkylosisImp);
+            document.getElementById('radial-abduction-imp').textContent = radialAbductionTotalImp;
+
+            const cmcAdduction = document.getElementById('cmc-adduction').value;
+            const cmcAdductionAnkylosis = document.getElementById('cmc-adduction-ankylosis').value;
+
+            let cmcAdductionImp = calculateThumbImpairment(cmcAdduction, ADDUCTIONData, 'cm');
+            let cmcAdductionAnkylosisImp = calculateThumbImpairment(cmcAdductionAnkylosis, ADDUCTIONData, 'ankylosis');
+
+            document.getElementById('cmc-adduction-motion-imp').textContent = cmcAdductionImp;
+            document.getElementById('cmc-adduction-ankylosis-imp').textContent = cmcAdductionAnkylosisImp;
+            let cmcAdductionTotalImp = Math.max(cmcAdductionImp, cmcAdductionAnkylosisImp);
+            document.getElementById('cmc-adduction-imp').textContent = cmcAdductionTotalImp;
+
+            const opposition = document.getElementById('opposition').value;
+            const oppositionAnkylosis = document.getElementById('opposition-ankylosis').value;
+
+            let oppositionImp = calculateThumbImpairment(opposition, OPPOSITIONData, 'cm');
+            let oppositionAnkylosisImp = calculateThumbImpairment(oppositionAnkylosis, OPPOSITIONData, 'ankylosis');
+
+            document.getElementById('opposition-motion-imp').textContent = oppositionImp;
+            document.getElementById('opposition-ankylosis-imp').textContent = oppositionAnkylosisImp;
+            let oppositionTotalImp = Math.max(oppositionImp, oppositionAnkylosisImp);
+            document.getElementById('opposition-imp').textContent = oppositionTotalImp;
+
+            const totalThumbDigitImp = ipTotalImp + mpTotalImp + radialAbductionTotalImp + cmcAdductionTotalImp + oppositionTotalImp;
+            const thumbHandImp = Math.round(totalThumbDigitImp * 0.4);
+            totalHDImpairment += thumbHandImp;
+
+            let thumbImpairments = [
+                { value: ipTotalImp, label: 'IP' },
+                { value: mpTotalImp, label: 'MP' },
+                { value: radialAbductionTotalImp, label: 'Radial Abduction' },
+                { value: cmcAdductionTotalImp, label: 'CMC Adduction' },
+                { value: oppositionTotalImp, label: 'Opposition' }
+            ].filter(imp => imp.value > 0);
+
+            thumbImpairments.sort((a, b) => b.value - a.value);
+
+            let additionString = thumbImpairments.map(imp => imp.value).join(' + ');
+
+            if (additionString) {
+                document.getElementById('total-imp').textContent = 
+                    `ADD: ${additionString} = ${totalThumbDigitImp} DT = ${thumbHandImp} HD`;
+            } else {
+                document.getElementById('total-imp').textContent = 
+                    `ADD: 0 DT = 0 HD`;
+            }
+            
+            // Calculate total hand impairment
+            const totalUEImpairment = Math.round(totalHDImpairment * 0.9);
+            const totalWPI = Math.round(totalUEImpairment * 0.6);
+
+            document.getElementById('total-hd-impairment').textContent = totalHDImpairment;
+            document.getElementById('total-ue-impairment').textContent = totalUEImpairment;
+            document.getElementById('total-wpi').textContent = totalWPI;
+
+            console.log('Final Impairment Results:', { totalHDImpairment, totalUEImpairment, totalWPI });
+        } catch (error) {
+            console.error('Error in calculateAllImpairments:', error);
+        }
+    }
+
+    // Event listeners
+    function initializeEventListeners() {
+        console.log('Initializing event listeners');
+        try {
+            const inputFields = document.querySelectorAll('input[type="number"]');
+            inputFields.forEach(input => {
+                input.addEventListener('input', calculateAllImpairments);
+            });
+
+            const clearAllButton = document.getElementById('clearAllButton');
+            if (clearAllButton) {
+                clearAllButton.addEventListener('click', clearAllInputs);
+            } else {
+                console.warn('Clear All button not found');
+            }
+
+            console.log('Event listeners initialized');
+        } catch (error) {
+            console.error('Error initializing event listeners:', error);
+        }
+    }
+
+    // Initialize the script
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded event fired');
+        initializeEventListeners();
+        calculateAllImpairments();
     });
-}
 
-// Add event listener to the Clear All button
-document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
-
-// Maintain Auto-Calculation (place this at the end of your script)
-// Add event listeners to all input fields for real-time updates
-document.addEventListener('DOMContentLoaded', function() {
-    const inputFields = document.querySelectorAll('input[type="number"]');
-    inputFields.forEach(input => {
-        input.addEventListener('input', calculateAllImpairments);
-    });
-
-    // Initial calculation
-    calculateAllImpairments();
-});
+    console.log('Script initialization complete');
+})();
