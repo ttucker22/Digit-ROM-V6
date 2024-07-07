@@ -835,15 +835,11 @@ function lookupfingerDTImpairment(angle, jointType, motionType) {
 function combinefingerImpairments(impairments) {
     let combined = 0;
     let combinedSteps = [];
-    let debugSteps = [];
-    impairments.forEach((imp, index) => {
-        let prevCombined = combined;
-        combined = combined + (imp / 100) * (1 - combined);
+    impairments.forEach(imp => {
+        combined = Math.round((combined + (imp / 100) * (1 - combined)) * 100) / 100;
         combinedSteps.push(imp);
-        debugSteps.push(`Step ${index + 1}: ${prevCombined.toFixed(4)} + (${imp}/100) * (1 - ${prevCombined.toFixed(4)}) = ${combined.toFixed(4)}`);
     });
-    console.log("Combination steps:", debugSteps);
-    return { combined: combined * 100, combinedSteps, debugSteps };
+    return { combined: Math.round(combined * 100), combinedSteps };
 }
 
 function addImpairments(impairments) {
@@ -852,12 +848,7 @@ function addImpairments(impairments) {
 
 function convertToHD(dt, fingerType) {
     const conversionFactor = fingerType === 'index' || fingerType === 'middle' ? 0.2 : 0.1;
-    const result = Math.round(dt * conversionFactor);
-    console.log(`Converting ${dt} DT to HD for ${fingerType} finger:`, {
-        calculation: `${dt} * ${conversionFactor} = ${dt * conversionFactor}`,
-        roundedResult: result
-    });
-    return result;
+    return Math.round(dt * conversionFactor);
 }
 
 // Thumb impairment calculation functions
@@ -933,6 +924,7 @@ function clearAllInputs() {
 // Add event listener to the Clear All button
 document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
 
+// Main calculation function
 function calculateAllImpairments() {
     let totalHDImpairment = 0;
 
@@ -994,44 +986,22 @@ function calculateAllImpairments() {
         const jointImpairments = [dipTotalImp, pipTotalImp, mpTotalImp].filter(imp => imp > 0);
         jointImpairments.sort((a, b) => b - a);
 
-        console.log(`${fingerType} Finger Joint Impairments:`, jointImpairments);
+        const { combined: totalImpairment, combinedSteps } = combinefingerImpairments(jointImpairments);
 
-        const { combined: totalImpairment, combinedSteps, debugSteps } = combinefingerImpairments(jointImpairments);
-
-        console.log(`${fingerType} Finger Combination Steps:`, debugSteps);
-
-        // Round only at the end for display
-        const roundedTotalImpairment = Math.round(totalImpairment);
-        console.log(`${fingerType} Finger Total Impairment:`, {
-            unrounded: totalImpairment.toFixed(2),
-            rounded: roundedTotalImpairment
-        });
-
-        const hdImpairment = convertToHD(roundedTotalImpairment, fingerType);
+        const hdImpairment = convertToHD(totalImpairment, fingerType);
         totalHDImpairment += hdImpairment;
 
         let CVC;
-        if (roundedTotalImpairment === 0) {
+        if (totalImpairment === 0) {
             CVC = `CVC: 0 DT = 0 HD`;
         } else if (jointImpairments.length === 1) {
-            CVC = `CVC: ${roundedTotalImpairment} DT = ${hdImpairment} HD`;
+            CVC = `CVC: ${totalImpairment} DT = ${hdImpairment} HD`;
         } else {
             const combinedStepsText = combinedSteps.join(' C ');
-            CVC = `CVC: ${combinedStepsText} = ${roundedTotalImpairment} DT = ${hdImpairment} HD`;
+            CVC = `CVC: ${combinedStepsText} = ${totalImpairment} DT = ${hdImpairment} HD`;
         }
 
         form.querySelector('.cvc-result').textContent = CVC;
-
-        console.log(`${fingerType} Finger Final CVC:`, CVC);
-    });
-
-        // Debugging output
-        console.log(`${fingerType} Finger:`, {
-            jointImpairments,
-            totalImpairment: totalImpairment.toFixed(2),
-            roundedTotalImpairment,
-            hdImpairment
-        });
     });
 
     // Calculate thumb impairment
@@ -1129,20 +1099,15 @@ function calculateAllImpairments() {
     document.getElementById('total-wpi').textContent = totalWPI;
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Add event listeners to all input fields
-    const inputFields = document.querySelectorAll('input[type="number"]');
-    inputFields.forEach(input => {
-        input.addEventListener('input', calculateAllImpairments);
-    });
+// Event listener for Clear All button
+document.getElementById('clearAllButton').addEventListener('click', clearAllInputs);
 
-    // Event listener for Clear All button
-    const clearAllButton = document.getElementById('clearAllButton');
-    if (clearAllButton) {
-        clearAllButton.addEventListener('click', clearAllInputs);
-    }
-
-    // Initial calculation
-    calculateAllImpairments();
+// Maintain Auto-Calculation (place this at the end of your script)
+// Add event listeners to all input fields for real-time updates
+const inputFields = document.querySelectorAll('input[type="number"]');
+inputFields.forEach(input => {
+    input.addEventListener('input', calculateAllImpairments);
 });
+
+// Initial calculation
+calculateAllImpairments();
